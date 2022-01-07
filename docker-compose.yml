@@ -1,0 +1,37 @@
+version: '3'
+services:
+  redis:
+    image: redis:6-alpine
+    command: redis-server
+    ports:
+      - 6379:6379
+    volumes:
+      - redis:/data
+
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - tdd_data:/var/lib/postgresql/data   
+
+  web:
+    build: .
+    volumes: 
+      - .:/opt/app
+    ports: 
+      - 3000:3000
+    command: bash -c "rails s -b 0.0.0.0 -p 3000 | bundle exec sidekiq"
+    tty: true
+    stdin_open: true
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: db
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  redis:
+  tdd_data:
